@@ -7,7 +7,7 @@ marker_size = 200
 
 marker_image = aruco.generateImageMarker(aruco_dict, marker_id, marker_size)
 
-image_file = 'aruco_marker33.png'
+image_file = f'aruco_marker{marker_id}.png'
 cv.imwrite(image_file, marker_image)
 
 print(f"ArUco marker with ID {marker_id} saved to {image_file}")
