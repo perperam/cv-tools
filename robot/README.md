@@ -15,7 +15,7 @@
     ├── left.jpg
     └── right.jpg
 ```
-4. The images should be jpgs containing the `aruco_marker33.jpg` as real world images.
+4. The images should be jpgs containing the `aruco_marker33.png` as real world images.
 5. Run `exca.py` on the `<data_dir>` directory: `python exca.py --data_dir <data_dir>`
 
 
