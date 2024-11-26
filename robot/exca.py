@@ -136,7 +136,7 @@ def rotation_from_opencv(rvec: np.ndarray) -> Rotation:
     return rot
 
 
-def main(data_dir: Path) -> None:
+def main(data_dir: Path, image_type: str="png") -> None:
     camera_matrix, distortion_coefficients = load_calibration(data_dir)
 
     T_tcb_m = gen_homogenous(
@@ -158,7 +158,7 @@ def main(data_dir: Path) -> None:
         trans: list[np.ndarray] = []
 
         for source in ["left", "right"]:
-            rvec, tvec = get_transform(sample_dir / f"{source}.jpg", camera_matrix, distortion_coefficients)
+            rvec, tvec = get_transform(sample_dir / f"{source}.{image_type}", camera_matrix, distortion_coefficients)
 
             rot_debug = rotation_from_opencv(rvec)
             print(rot_debug.as_euler("xyz", degrees=True))
