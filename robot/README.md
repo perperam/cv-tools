@@ -7,13 +7,13 @@
 ├── camera_parameters.yaml
 ├── sample01
 │   ├── label.json
-│   ├── left.jpg
-│   └── right.jpg
+│   ├── left.png
+│   └── right.png
 ...
 └── sample0n
     ├── label.json
-    ├── left.jpg
-    └── right.jpg
+    ├── left.png
+    └── right.png
 ```
 4. The images should be jpgs containing the `aruco_marker33.png` as real world images.
 5. Run `exca.py` on the `<data_dir>` directory: `python exca.py --data_dir <data_dir>`
