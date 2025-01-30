@@ -16,18 +16,23 @@ object_points = np.array([[-marker_size / 2, marker_size / 2, 0],
 def scale_polygon(polygon, scale_factor=0.1):
     # calculate the center of mass
     center = np.mean(polygon, axis=0).astype(np.int32)
-
     # shift the polygon the origin
     shifted_polygon = polygon - center
 
-    # scale the polygon by the given factor
     scaled_polygon = shifted_polygon * scale_factor
-
     # shift the polygon back to its original position
     scaled_polygon += center
 
     scaled_polygon = scaled_polygon.astype(np.int32)
     return scaled_polygon
+
+
+def blur_region(image, mask):
+    image_blurred = image.copy()
+    blurred_region = cv2.GaussianBlur(image, (21, 21), 40)
+    image_blurred[mask == 255] = blurred_region[mask == 255]
+
+    return image_blurred
 
 
 class Detector:
@@ -106,6 +111,12 @@ class Detector:
             inpainted_image = cv2.inpaint(image, mask, inpaintRadius=20, flags=cv2.INPAINT_NS)
 
             cv2.imshow("Inpainted", inpainted_image)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+
+            blurred_image = blur_region(inpainted_image, mask)
+
+            cv2.imshow("Blurred", blurred_image)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
 
