@@ -13,6 +13,23 @@ object_points = np.array([[-marker_size / 2, marker_size / 2, 0],
                           [-marker_size / 2, -marker_size / 2, 0]], dtype=np.float32)
 
 
+def scale_polygon(polygon, scale_factor=0.1):
+    # calculate the center of mass
+    center = np.mean(polygon, axis=0).astype(np.int32)
+
+    # shift the polygon the origin
+    shifted_polygon = polygon - center
+
+    # scale the polygon by the given factor
+    scaled_polygon = shifted_polygon * scale_factor
+
+    # shift the polygon back to its original position
+    scaled_polygon += center
+
+    scaled_polygon = scaled_polygon.astype(np.int32)
+    return scaled_polygon
+
+
 class Detector:
     def __init__(self):
         aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_6X6_250)
@@ -67,14 +84,19 @@ class Detector:
             print(marker_corners)
             pts = marker_corners.astype(np.int32)
 
-            pts = np.array([[357, 336],
-                            [236, 325],
-                            [246, 205],
-                            [366, 215]], dtype=np.int32)
+            # pts = np.array([[357, 336],
+            #                 [236, 325],
+            #                 [246, 205],
+            #                 [366, 215]], dtype=np.int32)
+
+            # manual scaled
+            pts = scale_polygon(pts, scale_factor=1.2)
+
+            # marker_corners.astype(np.int32)
 
             # https://docs.opencv.org/4.x/d6/d6e/group__imgproc__draw.html#ga8c69b68fab5f25e2223b6496aa60dad5
 
-            cv2.fillPoly(mask, [marker_corners.astype(np.int32)], (255,))
+            cv2.fillPoly(mask, [pts], (255,))
 
             cv2.imshow("Mask", mask)
             cv2.waitKey(0)
