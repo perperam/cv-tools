@@ -85,26 +85,14 @@ class Cleaner:
 
             cv2.fillPoly(mask, [corners], (255,))
 
-            # cv2.imshow("Mask", mask)
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
-
             if verbose: self.show_image("Mask", mask)
 
             # cv::INPAINT_NS or cv::INPAINT_TELEA
             inpainted_image = cv2.inpaint(image, mask, inpaintRadius=20, flags=cv2.INPAINT_NS)
 
-            # cv2.imshow("Inpainted", inpainted_image)
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
-
             if verbose: self.show_image("Inpainted", inpainted_image)
 
             blurred_image = self.blur_region(inpainted_image, mask)
-
-            # cv2.imshow("Blurred", blurred_image)
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
 
             if verbose: self.show_image("Blurred", blurred_image)
 
