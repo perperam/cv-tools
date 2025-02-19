@@ -13,28 +13,6 @@ object_points = np.array([[-marker_size / 2, marker_size / 2, 0],
                           [-marker_size / 2, -marker_size / 2, 0]], dtype=np.float32)
 
 
-def scale_polygon(polygon, scale_factor=0.1):
-    # calculate the center of mass
-    center = np.mean(polygon, axis=0).astype(np.int32)
-    # shift the polygon the origin
-    shifted_polygon = polygon - center
-
-    scaled_polygon = shifted_polygon * scale_factor
-    # shift the polygon back to its original position
-    scaled_polygon += center
-
-    scaled_polygon = scaled_polygon.astype(np.int32)
-    return scaled_polygon
-
-
-def blur_region(image, mask):
-    image_blurred = image.copy()
-    blurred_region = cv2.GaussianBlur(image, (21, 21), 40)
-    image_blurred[mask == 255] = blurred_region[mask == 255]
-
-    return image_blurred
-
-
 class Detector:
     def __init__(self):
         aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_6X6_250)
@@ -83,44 +61,86 @@ class Detector:
                 'tvec': tvec,
             })
 
-            mask = np.zeros(gray_image.shape[0:2], dtype=np.uint8)
 
-            print(type(gray_image))
-            print(marker_corners)
-            pts = marker_corners.astype(np.int32)
+        return detections
 
-            # pts = np.array([[357, 336],
-            #                 [236, 325],
-            #                 [246, 205],
-            #                 [366, 215]], dtype=np.int32)
+
+class Cleaner:
+    def __init__(self, ids: list[int]):
+        self.ids: list[int] = ids
+
+
+    def clean(self, image: np.ndarray, detections: list[dict], verbose: bool=True) -> np.ndarray:
+        for detection in detections:
+            mask = np.zeros(image.shape[0:2], dtype=np.uint8)
+
+            corners = detection['corners'].astype(np.int32)
 
             # manual scaled
-            pts = scale_polygon(pts, scale_factor=1.2)
+            corners = self.scale_polygon(corners, scale_factor=1.2)
 
             # marker_corners.astype(np.int32)
 
             # https://docs.opencv.org/4.x/d6/d6e/group__imgproc__draw.html#ga8c69b68fab5f25e2223b6496aa60dad5
 
-            cv2.fillPoly(mask, [pts], (255,))
+            cv2.fillPoly(mask, [corners], (255,))
 
-            cv2.imshow("Mask", mask)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            # cv2.imshow("Mask", mask)
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
+
+            if verbose: self.show_image("Mask", mask)
 
             # cv::INPAINT_NS or cv::INPAINT_TELEA
             inpainted_image = cv2.inpaint(image, mask, inpaintRadius=20, flags=cv2.INPAINT_NS)
 
-            cv2.imshow("Inpainted", inpainted_image)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            # cv2.imshow("Inpainted", inpainted_image)
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
 
-            blurred_image = blur_region(inpainted_image, mask)
+            if verbose: self.show_image("Inpainted", inpainted_image)
 
-            cv2.imshow("Blurred", blurred_image)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            blurred_image = self.blur_region(inpainted_image, mask)
 
-        return detections
+            # cv2.imshow("Blurred", blurred_image)
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
+
+            if verbose: self.show_image("Blurred", blurred_image)
+
+            image = blurred_image
+
+        return image
+
+
+    def show_image(self, title: str, image: np.ndarray):
+        cv2.imshow(title, image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+
+    def scale_polygon(self, polygon, scale_factor=0.1):
+        # calculate the center of mass
+        center = np.mean(polygon, axis=0).astype(np.int32)
+        # shift the polygon the origin
+        shifted_polygon = polygon - center
+
+        scaled_polygon = shifted_polygon * scale_factor
+        # shift the polygon back to its original position
+        scaled_polygon += center
+
+        scaled_polygon = scaled_polygon.astype(np.int32)
+        return scaled_polygon
+
+
+    def blur_region(self, image, mask):
+        image_blurred = image.copy()
+        blurred_region = cv2.GaussianBlur(image, (21, 21), 40)
+        image_blurred[mask == 255] = blurred_region[mask == 255]
+
+        return image_blurred
+
+
 
 
 if __name__ == "__main__":
@@ -135,4 +155,11 @@ if __name__ == "__main__":
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-    detector.detect(image)
+    detections = detector.detect(image)
+
+    for detection in detections:
+        print(f'Detection id: {detection['id']}')
+
+    cleaner = Cleaner([10])
+    cleaned_image = cleaner.clean(image, detections)
+    cleaner.show_image("Cleaned", cleaned_image)
