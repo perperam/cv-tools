@@ -45,7 +45,7 @@ class Detector:
 
         for i, id in enumerate(ids):
             marker_corners = corners[i][0]
-            marker_id = ids[0]
+            marker_id = ids[i]
 
             retval, rvec, tvec = cv2.solvePnP(
                     object_points,
