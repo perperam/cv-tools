@@ -3,9 +3,11 @@ from pathlib import Path
 import cv2
 import cv2.aruco as aruco
 import numpy as np
+from scipy.spatial.transform import Rotation
+import scipy
 
 
-marker_size = 100
+marker_size = 30
 
 object_points = np.array([[-marker_size / 2, marker_size / 2, 0],
                           [marker_size / 2, marker_size / 2, 0],
@@ -130,12 +132,50 @@ class Cleaner:
 
 
 
+class Calculator:
+    def calculate(self, detections: list[dict]):
+        rotations: list[np.ndarray] = []
+        translations: list[np.ndarray] = []
+
+        for detection in detections:
+            rotations.append(self.change_rotation(detection['rvec']))
+            translations.append(np.array(detection['tvec'].flatten()))
+
+        rotations: np.ndarray = np.array(rotations)
+        rotation_means: list[float] = []
+        for rotation in rotations.T:
+            rotation_mean = scipy.stats.circmean(rotation)
+
+            rotation_means.append(rotation_mean)
+
+        rotation_means: np.ndarray = np.array(rotation_means)
+
+
+        translations: np.ndarray = np.array(translations)
+        translation_means: list[float] = []
+        for translation in translations.T:
+            translation_mean = np.mean(translation)
+
+            translation_means.append(translation_mean)
+
+        translation_means: np.ndarray = np.array(translation_means)
+
+        # the 3d rotation and the translation as mean over each axis of detection
+        return rotation_means, translation_means
+
+
+    def change_rotation(self, rvec):
+        rotation_matrix, _ = cv2.Rodrigues(rvec)
+        rot = Rotation.from_matrix(rotation_matrix).as_euler('xyz', degrees=False)
+        return rot
+
+
 
 if __name__ == "__main__":
     detector = Detector()
     detector.load_camera()
 
-    image_path = Path("cap_00.jpg")
+    image_path = Path("cap_01.jpg")
 
     image = cv2.imread(str(image_path))
 
@@ -148,6 +188,15 @@ if __name__ == "__main__":
     for detection in detections:
         print(f'Detection id: {detection['id']}')
 
-    cleaner = Cleaner([10])
-    cleaned_image = cleaner.clean(image, detections)
-    cleaner.show_image("Cleaned", cleaned_image)
+    # cleaner = Cleaner([10])
+    # cleaned_image = cleaner.clean(image, detections)
+    # cleaner.show_image("Cleaned", cleaned_image)
+
+    print(detections)
+
+    calculator = Calculator()
+    rvec, tvec = calculator.calculate(detections)
+
+    print(np.degrees(rvec), tvec)
+
+
