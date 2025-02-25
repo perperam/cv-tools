@@ -72,7 +72,7 @@ class Cleaner:
         self.ids: list[int] = ids
 
 
-    def clean(self, image: np.ndarray, detections: list[dict], verbose: bool=True) -> np.ndarray:
+    def clean(self, image: np.ndarray, detections: list[dict], verbose: bool=False) -> np.ndarray:
         for detection in detections:
             mask = np.zeros(image.shape[0:2], dtype=np.uint8)
 
