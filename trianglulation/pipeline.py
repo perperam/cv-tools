@@ -1,3 +1,4 @@
+import csv
 from pathlib import Path
 
 import cv2
@@ -166,33 +167,66 @@ class Calculator:
         return rot
 
 
-
-if __name__ == "__main__":
+def process_images(images_path:Path, csv_path:Path, export_path: None|Path=None):
     detector = Detector()
     detector.load_camera()
 
-    image_path = Path("cap_01.jpg")
-
-    image = cv2.imread(str(image_path))
-
-    cv2.imshow("Image", image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-    detections = detector.detect(image)
-
-    for detection in detections:
-        print(f'Detection id: {detection['id']}')
-
-    # cleaner = Cleaner([10])
-    # cleaned_image = cleaner.clean(image, detections)
-    # cleaner.show_image("Cleaned", cleaned_image)
-
-    print(detections)
-
+    cleaner = Cleaner()
     calculator = Calculator()
-    rvec, tvec = calculator.calculate(detections)
-
-    print(np.degrees(rvec), tvec)
 
 
+    if export_path:
+        for camera_side in ['left', 'right']:
+            (export_path / camera_side).mkdir(exist_ok=True, parents=True)
+
+
+    with open(csv_path, 'w', newline='') as csv_file:
+        writer = csv.writer(csv_file, delimiter=',')
+
+        writer.writerow(['tx', 'ty', 'tz', 'rx', 'ry', 'rz'])
+
+
+        left_images: Path = images_path / 'left'
+        right_images: Path = images_path / 'right'
+
+        for images in zip(left_images.glob('*'), right_images.glob('*')):
+            left_image_path = images[0]
+            right_image_path = images[1]
+
+            left_image = cv2.imread(str(left_image_path))
+            right_image = cv2.imread(str(right_image_path))
+
+            left_detection = detector.detect(left_image)
+            right_detection = detector.detect(right_image)
+
+            if export_path:
+                left_cleaned_image = cleaner.clean(left_image, left_detection)
+                right_cleaned_image = cleaner.clean(right_image, right_detection)
+
+                left_export_path = export_path / 'left'
+                right_export_path = export_path / 'right'
+
+                cv2.imwrite(str(left_export_path), left_cleaned_image)
+                cv2.imwrite(str(right_export_path), right_cleaned_image)
+
+            left_rotation, left_translation = calculator.calculate(left_detection)
+            right_rotation, right_translation = calculator.calculate(right_detection)
+
+
+            rotations = np.array([left_rotation, right_rotation])
+            translations = np.array([left_translation, right_translation])
+
+
+            rotation_mean = scipy.stats.circmean(rotations, axis=0)  # can return array even if not documented
+            translation_mean = np.mean(translations, axis=0)
+
+
+            row = list(rotation_mean) + list(translation_mean)
+            writer.writerow(row)
+
+
+
+
+
+if __name__ == "__main__":
+    process_images(Path.cwd(), Path.cwd() / 'label.csv')
