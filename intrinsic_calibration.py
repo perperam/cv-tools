@@ -6,6 +6,7 @@ import cv2 as cv
 import numpy as np
 from pathlib import Path
 
+video_capture_device = int(input("Enter video capture device number (int) standard is 0: "))
 grid_width = int(input("Enter the number of internal corners in width (grid size): "))
 grid_height = int(input("Enter the number of internal corners in height (grid size): "))
 checker_size = float(input("Enter the checker size in mm: "))
@@ -24,7 +25,7 @@ images_dir = Path('./images')
 images_dir.mkdir(parents=True, exist_ok=True)
 
 if take_new_images:
-    cap = cv.VideoCapture(0)
+    cap = cv.VideoCapture(14)
     img_counter = 0
 
     while True:
@@ -35,12 +36,18 @@ if take_new_images:
         cv.imshow('Camera', frame)
 
         k = cv.waitKey(1)
-        if k % 256 == 32:  # SPACE pressed
+
+        # if k != -1:
+        #     print(k)
+
+        # take image if SPACE or RIGHT-ARROW is pressed
+        if k % 256 == 32 or k % 256 == 83:
             img_name = images_dir / f"cap_{img_counter:02d}.jpg"
             cv.imwrite(str(img_name), frame)
             print(f"{img_name} written!")
             img_counter += 1
-        elif k % 256 == 13:  # ENTER pressed
+        # stop image taking process when ENTER is pressed
+        elif k % 256 == 13:
             break
 
     cap.release()
